@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define HALT_OPCODE 0x19
 #define NOP_OPCODE 0x18
 #define EIGHT_BIT_MASK 0xff
@@ -127,19 +128,35 @@ void executeInstruction() {
     int dest;
     int source;
     switch (IR & 0x0c) { // Destination
-    case 0x0:
+    case 0x00:
       dest = memory[MAR]; // Indirect (MAR used as a pointer)
       break;
-    case 0x4:
+    case 0x04:
       dest = ACC; // Accumulator ACC
       break;
-    case 0x8:
+    case 0x08:
       dest = MAR; // Address register MAR
       break;
-    case 0xc:
+    case 0x0c:
       dest = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])]; // Memory
       break;
     }
+
+    switch(IR & 0x03){ //Source
+        case 0x00: //Indirec (MAR used as pointer)
+            source = memory[MAR];
+            break;
+        case 0x01://Accumulator ACC
+            source = ACC;
+            break;
+        case 0x02://Constant*
+                  // TODO
+            break;
+        case 0x03:
+            //TODO
+            break;
+    }
+
 
   } else { // All else is either a "No Operation", "Halt" or and illegal opcode.
     if (IR == 0x18) // NOP
