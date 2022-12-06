@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
   }
   fclose(mem_output_file);
   return 0;
+
 }
 
 void fetchNextInstruction() {
@@ -120,6 +121,8 @@ void fetchNextInstruction() {
   PC++; // Increment PC
 }
 
+
+
 void executeInstruction() {
   int address;
 
@@ -128,6 +131,7 @@ void executeInstruction() {
     int dest;
     int source;
     switch (IR & 0x0c) { // Destination
+
     case 0x00:
       dest = memory[MAR]; // Indirect (MAR used as a pointer)
       break;
