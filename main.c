@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define HALT_OPCODE 0x19
 #define NOP_OPCODE 0x18
 #define EIGHT_BIT_MASK 0xff
@@ -107,6 +108,7 @@ int main(int argc, char *argv[]) {
   }
   fclose(mem_output_file);
   return 0;
+
 }
 
 void fetchNextInstruction() {
@@ -119,6 +121,8 @@ void fetchNextInstruction() {
   PC++; // Increment PC
 }
 
+
+
 void executeInstruction() {
   int address;
 
@@ -126,19 +130,85 @@ void executeInstruction() {
 
     int dest;
     int source;
-    switch (IR & 0x0c) { // Destination
-    case 0x0:
+
+    switch (IR & 0x0c) { // Determine Destination
+    case 0x00:
       dest = memory[MAR]; // Indirect (MAR used as a pointer)
       break;
-    case 0x4:
+    case 0x04:
       dest = ACC; // Accumulator ACC
       break;
-    case 0x8:
+    case 0x08:
       dest = MAR; // Address register MAR
       break;
-    case 0xc:
+    case 0x0c:
       dest = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])]; // Memory
       break;
+    default:
+      break;
+    }
+
+    switch(IR & 0x03){ //Determine Source
+        case 0x00: //Indirec (MAR used as pointer)
+            source = memory[MAR];
+            break;
+        case 0x01://Accumulator ACC
+            source = ACC;
+            break;
+        case 0x02://Constant*
+                  // TODO
+            break;
+        case 0x03:
+            //TODO
+            break;
+        default:
+            break;
+    }
+
+    switch(IR & 0x70){
+        case 0x00: //AND
+            dest = dest & source;
+            break;
+        case 0x10: // OR
+            dest = dest | source;
+            break;
+        case 0x20: //XOR
+            dest = dest ^ source;
+            break;
+        case 0x30: //ADD
+            dest = dest + source;
+            break;
+        case 0x40: //SUB
+            dest = dest - source;
+            break;
+        case 0x50: //INC
+            dest++;
+            break;
+        case 0x60: //DEC
+            dest--;
+            break;
+        case 0x70: //NOT
+            dest = !dest;
+            break;
+        default:
+            break;
+    }
+
+    switch(IR & 0x0C){
+        case 0x00:
+            memory[MAR] = dest & 0xff; //
+            break;
+        case 0x04:
+            ACC = dest & 0xff;
+            break;
+        case 0x08:
+            MAR = dest & 0xffff;
+            break;
+        case 0x0C:
+            //TODO
+            break;
+        default:
+            break;
     }
 
   } else { // All else is either a "No Operation", "Halt" or and illegal opcode.
