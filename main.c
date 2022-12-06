@@ -127,7 +127,7 @@ void executeInstruction() {
 
     int dest;
     int source;
-    switch (IR & 0x0c) { // Destination
+    switch (IR & 0x0c) { // Determine Destination
     case 0x00:
       dest = memory[MAR]; // Indirect (MAR used as a pointer)
       break;
@@ -144,7 +144,7 @@ void executeInstruction() {
       break;
     }
 
-    switch(IR & 0x03){ //Source
+    switch(IR & 0x03){ //Determine Source
         case 0x00: //Indirec (MAR used as pointer)
             source = memory[MAR];
             break;
@@ -178,13 +178,30 @@ void executeInstruction() {
             dest = dest - source;
             break;
         case 0x50: //INC
-            dest = source + 1;
+            dest++;
             break;
         case 0x60: //DEC
-            dest = source - 1;
+            dest--;
             break;
         case 0x70: //NOT
-            dest = !source;
+            dest = !dest;
+            break;
+        default:
+            break;
+    }
+
+    switch(IR & 0x0C){
+        case 0x00:
+            memory[MAR] = dest & 0xff; //
+            break;
+        case 0x04:
+            ACC = dest & 0xff;
+            break;
+        case 0x08:
+            MAR = dest & 0xffff;
+            break;
+        case 0x0C:
+            //TODO
             break;
         default:
             break;
