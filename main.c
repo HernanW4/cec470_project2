@@ -140,6 +140,8 @@ void executeInstruction() {
     case 0x0c:
       dest = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])]; // Memory
       break;
+    default:
+      break;
     }
 
     switch(IR & 0x03){ //Source
@@ -155,8 +157,38 @@ void executeInstruction() {
         case 0x03:
             //TODO
             break;
+        default:
+            break;
     }
 
+    switch(IR & 0x70){
+        case 0x00: //AND
+            dest = dest & source;
+            break;
+        case 0x10: // OR
+            dest = dest | source;
+            break;
+        case 0x20: //XOR
+            dest = dest ^ source;
+            break;
+        case 0x30: //ADD
+            dest = dest + source;
+            break;
+        case 0x40: //SUB
+            dest = dest - source;
+            break;
+        case 0x50: //INC
+            dest = source + 1;
+            break;
+        case 0x60: //DEC
+            dest = source - 1;
+            break;
+        case 0x70: //NOT
+            dest = !source;
+            break;
+        default:
+            break;
+    }
 
   } else { // All else is either a "No Operation", "Halt" or and illegal opcode.
     if (IR == 0x18) // NOP
