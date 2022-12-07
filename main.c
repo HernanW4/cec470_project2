@@ -121,119 +121,113 @@ void fetchNextInstruction() {
   // arguments, we must increment the PC by 2 so we dont use an address or
   // whatever is there as an operation command. Id say look at how we wrote
   // execution if and switch statements for reference
-  
- if((IR & 0xf8)==0x10){
- PC+=2;
-  }
-  else if(IR & 0x80){
-    switch (IR & 0x0c){
+
+  if ((IR & 0xf8) == 0x10) {
+    PC += 2;
+  } else if (IR & 0x80) {
+    switch (IR & 0x0c) {
     case 0x0c:
-        switch(IR & 0x03){
-        case 0://indirect
-            PC +=2;
-            break;
-        case 1://ACC
-            PC+=2;
-            break;
-        case 2://variable
-            PC +=3;
-            break;
-        case 3://mem
-            PC +=4;
-            break;
-        default:
-            break;
-        }
+      switch (IR & 0x03) {
+      case 0: // indirect
+        PC += 2;
         break;
+      case 1: // ACC
+        PC += 2;
+        break;
+      case 2: // variable
+        PC += 3;
+        break;
+      case 3: // mem
+        PC += 4;
+        break;
+      default:
+        break;
+      }
+      break;
 
     case 0x08:
-        switch(IR & 0x03){
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            PC +=2;
-            break;
-        case 3:
-            PC +=2;
-            break;
-        default:
-            break;
-        }
+      switch (IR & 0x03) {
+      case 0:
         break;
-
+      case 1:
+        break;
+      case 2:
+        PC += 2;
+        break;
+      case 3:
+        PC += 2;
+        break;
+      default:
+        break;
+      }
+      break;
 
     case 0x04:
-        switch (IR & 0x03){
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            PC++;
-            break;
-        case 3:
-            PC +=2;
-            break;
-        default:
-            break;
-        }
+      switch (IR & 0x03) {
+      case 0:
         break;
-
-    case 0x00:
-        switch (IR & 0x03){
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            PC++;
-            break;
-        case 3:
-            PC+=2;
-            break;
-        default:
-            break;
-        }
+      case 1:
         break;
-
-        default:
-            break;
-
-    }
-  }
-
-  else if((IR & 0xf0)==0){
-    switch (IR & 0x7){
-    case 0:
-        PC+=2;
-        break;
-    case 1:
+      case 2:
         PC++;
         break;
-    case 2:
+      case 3:
+        PC += 2;
         break;
-    case 3:
+      default:
         break;
-    case 4:
-        PC+=2;
+      }
+      break;
+
+    case 0x00:
+      switch (IR & 0x03) {
+      case 0:
         break;
-    case 5:
-        PC+=2;
+      case 1:
         break;
-    case 6:
+      case 2:
+        PC++;
         break;
+      case 3:
+        PC += 2;
+        break;
+      default:
+        break;
+      }
+      break;
+
     default:
-        break;
+      break;
     }
   }
 
-  else{
-
+  else if ((IR & 0xf0) == 0) {
+    switch (IR & 0x7) {
+    case 0:
+      PC += 2;
+      break;
+    case 1:
+      PC++;
+      break;
+    case 2:
+      break;
+    case 3:
+      break;
+    case 4:
+      PC += 2;
+      break;
+    case 5:
+      PC += 2;
+      break;
+    case 6:
+      break;
+    default:
+      break;
+    }
   }
 
-
+  else {
+  }
 
   operand = PC - old_PC - 1; // Move operand ptr
   PC &= 0xffff;              // Memory check
@@ -337,11 +331,45 @@ void executeInstruction() {
     default:
       break;
     }
-  } else if ((IR & 0xf0) ==
-             0) { // This asks whether it is a store or a load op
-                  // youre going to need another if else within this else if for
-                  // defining which of the two it is, again, use
-                  // maskng, ensure which bits you need to mask
+  } else if ((IR & 0xf0) == 0) {
+    if ((IR & 0x08) == 0) {   // Store?
+      if ((IR & 0x04) == 0) { // Storing from register from acc
+        switch (IR & 0x03) {
+        case 0:
+          memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])] =
+              ACC; // operand is an address
+          break;
+        case 1: // Operand constant
+          break;
+        case 2:
+          memory[MAR] = ACC; // MAR used as ptr
+          break;
+        default:
+          break;
+        }
+      } else { // Storing from Register = Index register MAR
+        switch (IR & 0x03) {
+        case 0:
+          memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])] =
+              (MAR >> 8) &
+              0xff; // Storing with Method = Operand is used as address
+          memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2]) + 1] =
+              MAR & 0xff;
+          break;
+        case 1: // Operand is used as a Constant
+          break;
+        case 2:
+          memory[MAR] =
+              (MAR >> 8) &
+              0xff; // Storing with Method = Indirect (MAR used as a pointer)
+          memory[MAR + 1] = MAR & 0xff;
+          break;
+        default:
+          break;
+        }
+      }
+    } else { // LOAD BEGINS HERE
+    }
   } else if ((IR & 0xF8) == 0x10) { // This took a hot minute to figure this out
                                     // LOL Asks if IR is for branches
     address = (memory[old_PC + 1] << 8) +
