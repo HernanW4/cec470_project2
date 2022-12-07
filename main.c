@@ -121,6 +121,119 @@ void fetchNextInstruction() {
   // arguments, we must increment the PC by 2 so we dont use an address or
   // whatever is there as an operation command. Id say look at how we wrote
   // execution if and switch statements for reference
+  
+ if((IR & 0xf8)==0x10){
+ PC+=2;
+  }
+  else if(IR & 0x80){
+    switch (IR & 0x0c){
+    case 0x0c:
+        switch(IR & 0x03){
+        case 0://indirect
+            PC +=2;
+            break;
+        case 1://ACC
+            PC+=2;
+            break;
+        case 2://variable
+            PC +=3;
+            break;
+        case 3://mem
+            PC +=4;
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case 0x08:
+        switch(IR & 0x03){
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            PC +=2;
+            break;
+        case 3:
+            PC +=2;
+            break;
+        default:
+            break;
+        }
+        break;
+
+
+    case 0x04:
+        switch (IR & 0x03){
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            PC++;
+            break;
+        case 3:
+            PC +=2;
+            break;
+        default:
+            break;
+        }
+        break;
+
+    case 0x00:
+        switch (IR & 0x03){
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            PC++;
+            break;
+        case 3:
+            PC+=2;
+            break;
+        default:
+            break;
+        }
+        break;
+
+        default:
+            break;
+
+    }
+  }
+
+  else if((IR & 0xf0)==0){
+    switch (IR & 0x7){
+    case 0:
+        PC+=2;
+        break;
+    case 1:
+        PC++;
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    case 4:
+        PC+=2;
+        break;
+    case 5:
+        PC+=2;
+        break;
+    case 6:
+        break;
+    default:
+        break;
+    }
+  }
+
+  else{
+
+  }
+
+
 
   operand = PC - old_PC - 1; // Move operand ptr
   PC &= 0xffff;              // Memory check
