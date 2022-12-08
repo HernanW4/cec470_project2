@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   // This line is fire to me lmao
   if (fp && strcmp(filename, "mem_in.txt") != 1) {
     printf("File contents:\n");
-    while (!feof(fp)) {
+    while (feof(fp) != 1) {
       ch = fgetc(fp);
       // Only fills memory if the character retrieved is not a space, null
       // character, and new line character
@@ -254,10 +254,7 @@ void executeInstruction() {
     case 0x0c:
       dest = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])]; // Memory
       break;
-    default:
-      break;
     }
-
     switch (IR & 0x03) { // Determine Source
     case 0x00:           // Indirec (MAR used as pointer)
       source = memory[MAR];
@@ -279,8 +276,6 @@ void executeInstruction() {
       } else {
         source = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])];
       }
-      break;
-    default:
       break;
     }
 
@@ -328,10 +323,18 @@ void executeInstruction() {
       memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])] =
           dest & 0xff; // Why yes this is a terrible line
       break;
-    default:
-      break;
     }
   } else if ((IR & 0xf0) == 0) {
+        //Register: 
+        //   0- ACC
+        //   1- MAR
+
+        //Method:
+        //  00- Operand is used as address
+        //  01-Operand is used as a constant
+        //  10-Indirect(MAR used as pointer)
+
+
     if ((IR & 0x08) == 0) {   // Store?
       if ((IR & 0x04) == 0) { // Storing from register from acc
         switch (IR & 0x03) {
@@ -369,6 +372,68 @@ void executeInstruction() {
         }
       }
     } else { // LOAD BEGINS HERE
+
+        //Register: 
+        //   0- ACC
+        //   1- MAR
+
+        //Method:
+        //  00- Operand is used as address
+        //  01-Operand is used as a constant
+        //  10-Indirect(MAR used as pointer)
+
+
+        if((IR & 0x04) == 0){ //This checks for the ACC thingy :)
+            switch(IR & 0x03){
+
+                case 0x00: //Method 00 In order to get the appropiate value for ACC register we need to do some shifting math. Fun right? If you have any question ask professor Laxima, she explained it to me :).
+                    ACC = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])];
+                    break;
+
+                case 0x01: //Method 01 constant time
+                    ACC = memory[old_PC + 1];
+                    break;
+
+                case 0x02: //Method 10
+                    ACC = memory[MAR];
+                    break;
+
+                default:
+                    break;
+            }
+
+        }
+        else{ //If it isnt ACC then there is only on other option. Can you guess what it is?
+            
+            uint16_t bits_shifted = (memory[old_PC + 1] << 8);
+            uint16_t temp = MAR; //Keeps track of what MAR was before change, this is necessary for Method 01.
+
+            switch(IR & 0x03){
+                case 0x00: //Method 00
+                        MAR = memory[(bits_shifted + memory[old_PC + 2])];
+                        MAR = MAR << 8;
+                        MAR += memory[(bits_shifted + memory[old_PC + 2]) + 1]; //Man let me tell you, professor laxima is a goat explaining this. But i wont be able to explain how it works xD.
+                    break;
+
+                case 0x01: //Method 01
+                    MAR = memory[old_PC + 1];
+                    MAR <<= 8;
+                    MAR += memory[old_PC + 2];
+                    break;
+                case 0x02:
+                    MAR = memory[temp];
+                    MAR <<=8;
+                    MAR += memory[temp + 1];
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+
     }
   } else if ((IR & 0xF8) == 0x10) { // This took a hot minute to figure this out
                                     // LOL Asks if IR is for branches
