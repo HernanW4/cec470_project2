@@ -11,7 +11,7 @@
 #define SIZE_OF_MEMORY 65536
 void fetchNextInstruction(void);
 void executeInstruction(void);
-
+int ascii_to_hex(char c);
 unsigned char memory[SIZE_OF_MEMORY];
 
 // Accumulator (8 bit) used to operate on data
@@ -31,13 +31,18 @@ uint16_t PC = 0;
 // Old PC
 uint16_t old_PC = 0;
 
-uint16_t operand = 0; // This avoids us reading out of the file.
+int operand = 0; // This avoids us reading out of the file.
+
 int main(int argc, char *argv[]) {
   // Execution loop. Continue fetching and executing
   // until PC points to a HALT instruction.
   //
   FILE *fp;
   char *filename;
+  char *data;
+  unsigned char c1;
+  unsigned char c2;
+  unsigned char sum;
   char ch;
   uint32_t i = 0;
   uint32_t count = 11;
@@ -58,18 +63,19 @@ int main(int argc, char *argv[]) {
     strncpy(filename, argv[1], count);
     filename[strlen(filename)] = '\0';
   }
-  // Open file in read only mode
-  fp = fopen(filename, "rb");
+  // Open file in read text only mode
+  fp = fopen(filename, "rt");
   // If file opened successfully, then print the contents
-  // This line is fire to me lmao
   if (fp && strcmp(filename, "mem_in.txt") != 1) {
-    printf("File contents:\n");
-    while (feof(fp) != 1) {
-      ch = fgetc(fp);
+    while ((ch = fgetc(fp)) != EOF) {
+
       // Only fills memory if the character retrieved is not a space, null
       // character, and new line character
       if (isspace(ch) == 0 && ch != '\n' && ch != '\0') {
-        memory[i] = ch;
+        c1 = ascii_to_hex(ch);
+        c2 = ascii_to_hex(fgetc(fp));
+        sum = c1 << 4 | c2;
+        memory[i] = sum;
         i++;
       }
     }
@@ -81,14 +87,9 @@ int main(int argc, char *argv[]) {
     printf("Check Arguments.");
     return 0;
   }
-  /*
-  // Utility print out memory array
-  for (i = 0; i < SIZE_OF_MEMORY; i++) {
-    printf("%c", memory[i]);
-  }
-  */
+
   // memory has been fully loaded, and now we begin execution of the program.
-  while (memory[PC] != HALT_OPCODE) {
+  while (memory[PC] != HALT_OPCODE && operand < SIZE_OF_MEMORY) {
     fetchNextInstruction();
     executeInstruction();
   }
@@ -103,9 +104,20 @@ int main(int argc, char *argv[]) {
     fprintf(mem_output_file, "\n");
   }
   fclose(mem_output_file);
+  printf("See mem_out.txt for results.");
   return 0;
 }
 
+int ascii_to_hex(char c) {
+  int num = (int)c;
+  if (num < 58 && num > 47) {
+    return num - 48;
+  }
+  if (num < 103 && num > 96) {
+    return num - 87;
+  }
+  return num;
+}
 void fetchNextInstruction() {
   // So my understanding of how we keep track of the addresses of both the
   // opcode and MSB and LSB via the given global variables.
@@ -308,7 +320,7 @@ void executeInstruction() {
       break;
     }
 
-    switch (IR & 0x0C) { // Isolates destination ID
+    switch (IR & 0x0c) { // Isolates destination ID
     case 0x00:
       memory[MAR] = dest & 0xff; // indirect
       break;
@@ -318,21 +330,19 @@ void executeInstruction() {
     case 0x08:
       MAR = dest & 0xffff; // Address Register
       break;
-    case 0x0C:
-
-      memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])] =
-          dest & 0xff; // Why yes this is a terrible line
+    case 0xc:
+      memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])] = dest & 0xff;
       break;
     }
   } else if ((IR & 0xf0) == 0) {
-        //Register: 
-        //   0- ACC
-        //   1- MAR
+    // Register:
+    //    0- ACC
+    //    1- MAR
 
-        //Method:
-        //  00- Operand is used as address
-        //  01-Operand is used as a constant
-        //  10-Indirect(MAR used as pointer)
+    // Method:
+    //   00- Operand is used as address
+    //   01-Operand is used as a constant
+    //   10-Indirect(MAR used as pointer)
 
 
     if ((IR & 0x08) == 0) {   // Store?
@@ -373,67 +383,69 @@ void executeInstruction() {
       }
     } else { // LOAD BEGINS HERE
 
-        //Register: 
-        //   0- ACC
-        //   1- MAR
+      // Register:
+      //    0- ACC
+      //    1- MAR
 
-        //Method:
-        //  00- Operand is used as address
-        //  01-Operand is used as a constant
-        //  10-Indirect(MAR used as pointer)
+      // Method:
+      //   00- Operand is used as address
+      //   01-Operand is used as a constant
+      //   10-Indirect(MAR used as pointer)
 
+      if ((IR & 0x04) == 0) { // This checks for the ACC thingy :)
+        switch (IR & 0x03) {
 
-        if((IR & 0x04) == 0){ //This checks for the ACC thingy :)
-            switch(IR & 0x03){
+        case 0x00: // Method 00 In order to get the appropiate value for ACC
+                   // register we need to do some shifting math. Fun right? If
+                   // you have any question ask professor Laxima, she explained
+                   // it to me :).
+          ACC = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])];
+          break;
 
-                case 0x00: //Method 00 In order to get the appropiate value for ACC register we need to do some shifting math. Fun right? If you have any question ask professor Laxima, she explained it to me :).
-                    ACC = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])];
-                    break;
+        case 0x01: // Method 01 constant time
+          ACC = memory[old_PC + 1];
+          break;
 
-                case 0x01: //Method 01 constant time
-                    ACC = memory[old_PC + 1];
-                    break;
+        case 0x02: // Method 10
+          ACC = memory[MAR];
+          break;
 
-                case 0x02: //Method 10
-                    ACC = memory[MAR];
-                    break;
-
-                default:
-                    break;
-            }
-
-        }
-        else{ //If it isnt ACC then there is only on other option. Can you guess what it is?
-            
-            uint16_t bits_shifted = (memory[old_PC + 1] << 8);
-            uint16_t temp = MAR; //Keeps track of what MAR was before change, this is necessary for Method 01.
-
-            switch(IR & 0x03){
-                case 0x00: //Method 00
-                        MAR = memory[(bits_shifted + memory[old_PC + 2])];
-                        MAR = MAR << 8;
-                        MAR += memory[(bits_shifted + memory[old_PC + 2]) + 1]; //Man let me tell you, professor laxima is a goat explaining this. But i wont be able to explain how it works xD.
-                    break;
-
-                case 0x01: //Method 01
-                    MAR = memory[old_PC + 1];
-                    MAR <<= 8;
-                    MAR += memory[old_PC + 2];
-                    break;
-                case 0x02:
-                    MAR = memory[temp];
-                    MAR <<=8;
-                    MAR += memory[temp + 1];
-                    break;
-
-                default:
-                    break;
-
-            }
-
+        default:
+          break;
         }
 
+      } else { // If it isnt ACC then there is only on other option. Can you
+               // guess what it is?
 
+        uint16_t bits_shifted = (memory[old_PC + 1] << 8);
+        int temp = MAR; // Keeps track of what MAR was before change, this
+                        // is necessary for Method 01.
+
+        switch (IR & 0x03) {
+        case 0x00: // Method 00
+          MAR = memory[(memory[old_PC + 1] << 8) + memory[old_PC + 2]];
+          MAR = MAR << 8;
+          MAR += memory[(memory[old_PC + 1] << 8) + memory[old_PC + 2] +
+                        1]; // Man let me tell you, professor laxima is a goat
+                            // explaining this. But i wont be able to explain
+                            // how it works xD.
+          break;
+
+        case 0x01: // Method 01
+          MAR = memory[old_PC + 1];
+          MAR <<= 8;
+          MAR += memory[old_PC + 2];
+          break;
+        case 0x02:
+          MAR = memory[temp];
+          MAR <<= 8;
+          MAR += memory[temp + 1];
+          break;
+
+        default:
+          break;
+        }
+      }
     }
   } else if ((IR & 0xF8) == 0x10) { // This took a hot minute to figure this out
                                     // LOL Asks if IR is for branches
