@@ -344,6 +344,7 @@ void executeInstruction() {
     //   01-Operand is used as a constant
     //   10-Indirect(MAR used as pointer)
 
+
     if ((IR & 0x08) == 0) {   // Store?
       if ((IR & 0x04) == 0) { // Storing from register from acc
         switch (IR & 0x03) {
