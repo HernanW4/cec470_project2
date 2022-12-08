@@ -3,7 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+/*
+Jeremiah's Code
+Lines 39-123
+Lines 252-296
+Lines 353-389
+*/
 #define HALT_OPCODE 0x19
 #define NOP_OPCODE 0x18
 #define EIGHT_BIT_MASK 0xff
