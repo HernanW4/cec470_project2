@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   // This line is fire to me lmao
   if (fp && strcmp(filename, "mem_in.txt") != 1) {
     printf("File contents:\n");
-    while (!feof(fp)) {
+    while (feof(fp) != 1) {
       ch = fgetc(fp);
       // Only fills memory if the character retrieved is not a space, null
       // character, and new line character
@@ -72,7 +72,6 @@ int main(int argc, char *argv[]) {
         memory[i] = ch;
         i++;
       }
-      printf("\n%c",ch);
     }
     fclose(fp);
     free(filename);
@@ -255,10 +254,7 @@ void executeInstruction() {
     case 0x0c:
       dest = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])]; // Memory
       break;
-    default:
-      break;
     }
-
     switch (IR & 0x03) { // Determine Source
     case 0x00:           // Indirec (MAR used as pointer)
       source = memory[MAR];
@@ -280,8 +276,6 @@ void executeInstruction() {
       } else {
         source = memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])];
       }
-      break;
-    default:
       break;
     }
 
@@ -328,8 +322,6 @@ void executeInstruction() {
 
       memory[((memory[old_PC + 1] << 8) + memory[old_PC + 2])] =
           dest & 0xff; // Why yes this is a terrible line
-      break;
-    default:
       break;
     }
   } else if ((IR & 0xf0) == 0) {
